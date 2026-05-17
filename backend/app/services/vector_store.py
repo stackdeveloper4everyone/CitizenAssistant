@@ -28,15 +28,14 @@ class PolicyVectorStore:
         self.vector_name = "dense"
         self.hash_dim = 256
         self.embedding_model = settings.qdrant_embedding_model
-        self.use_hash_fallback = settings.qdrant_use_hash_fallback
-        if not self._supports_fastembed():
-            if not self.use_hash_fallback:
-                logger.info("qdrant_fastembed_unavailable; enabling hash_fallback")
-            self.use_hash_fallback = True
-            return
+        fastembed_available = hasattr(self.client, "list_text_models") and hasattr(self.client, "set_model")
+        self.use_hash_fallback = settings.qdrant_use_hash_fallback or not fastembed_available
 
         if self.use_hash_fallback:
-            logger.info("qdrant_hash_fallback_enabled_by_config")
+            if not fastembed_available:
+                logger.info("qdrant_hash_fallback: FastEmbed APIs unavailable in this qdrant-client build")
+            else:
+                logger.info("qdrant_hash_fallback_enabled_by_config")
             return
 
         self.embedding_model = self._select_supported_model(settings.qdrant_embedding_model)
@@ -48,11 +47,6 @@ class PolicyVectorStore:
                 self.embedding_model,
             )
             self.use_hash_fallback = True
-
-    def _supports_fastembed(self) -> bool:
-        return callable(getattr(self.client, "list_text_models", None)) and callable(
-            getattr(self.client, "set_model", None)
-        )
 
     def add_search_results(self, results: list[dict]) -> int:
         documents: list[str] = []
@@ -226,7 +220,7 @@ class PolicyVectorStore:
         }
 
     def _select_supported_model(self, requested_model: str) -> str:
-        if not self._supports_fastembed():
+        if not hasattr(self.client, "list_text_models"):
             return requested_model
         supported = self.client.list_text_models()
         supported_names = set(supported.keys())

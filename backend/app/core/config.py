@@ -35,7 +35,10 @@ class Settings(BaseSettings):
     qdrant_api_key: str = Field(default="", alias="QDRANT_API_KEY")
     qdrant_collection: str = "citizen_policy_knowledge"
     qdrant_embedding_model: str = "BAAI/bge-base-en-v1.5"
-    qdrant_use_hash_fallback: bool = Field(default=False, alias="QDRANT_USE_HASH_FALLBACK")
+    qdrant_use_hash_fallback: bool = Field(
+        default=True,
+        alias="QDRANT_USE_HASH_FALLBACK",
+    )
 
     mem0_api_key: str = Field(default="")
     mem0_org_id: str = Field(default="")
