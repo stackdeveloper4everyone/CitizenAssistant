@@ -20,7 +20,7 @@ class PolicyVectorStore:
         self.collection_name = settings.qdrant_collection
         client_kwargs: dict = {
             "url": settings.qdrant_url,
-            "timeout": 30,
+            "timeout": 10,
         }
         if settings.qdrant_api_key:
             client_kwargs["api_key"] = settings.qdrant_api_key

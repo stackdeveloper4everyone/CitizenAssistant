@@ -29,8 +29,9 @@ services:
       # Lighter embedding model for Render free tier (512 MB RAM). Set QDRANT_USE_HASH_FALLBACK=true if deploy OOMs.
       - key: QDRANT_EMBEDDING_MODEL
         value: BAAI/bge-small-en-v1.5
+      # Skip FastEmbed model download at boot so the service binds PORT quickly on free tier.
       - key: QDRANT_USE_HASH_FALLBACK
-        value: "false"
+        value: "true"
       - key: SARVAM_API_KEY
         sync: false
       - key: TAVILY_API_KEY

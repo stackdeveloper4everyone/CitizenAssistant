@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -17,9 +19,36 @@ from backend.app.services.search_service import SearchService
 from backend.app.services.session_store import SessionStore
 from backend.app.services.vector_store import PolicyVectorStore
 
-
+logger = logging.getLogger(__name__)
 settings = get_settings()
-app = FastAPI(title=settings.app_name, debug=settings.debug)
+frontend_dir = Path(settings.frontend_dir)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize heavy services after Uvicorn binds PORT (required for Render)."""
+    logger.info("Initializing application services")
+    app.state.rate_limiter = InMemoryRateLimiter(settings.rate_limit_per_minute)
+    app.state.session_store = SessionStore()
+    app.state.memory_service = MemoryService(settings)
+
+    sarvam_client = SarvamClient(settings)
+    search_service = SearchService(settings)
+    vector_store = PolicyVectorStore(settings)
+    app.state.policy_agent = PolicyAgent(
+        sarvam=sarvam_client,
+        search_service=search_service,
+        vector_store=vector_store,
+        memory_service=app.state.memory_service,
+    )
+    logger.info(
+        "Application ready hash_fallback=%s",
+        vector_store.use_hash_fallback,
+    )
+    yield
+
+
+app = FastAPI(title=settings.app_name, debug=settings.debug, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,26 +58,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-frontend_dir = Path(settings.frontend_dir)
 app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
-
-sarvam_client = SarvamClient(settings)
-search_service = SearchService(settings)
-vector_store = PolicyVectorStore(settings)
-memory_service = MemoryService(settings)
-session_store = SessionStore()
-policy_agent = PolicyAgent(
-    sarvam=sarvam_client,
-    search_service=search_service,
-    vector_store=vector_store,
-    memory_service=memory_service,
-)
-
-app.state.rate_limiter = InMemoryRateLimiter(settings.rate_limit_per_minute)
-app.state.session_store = session_store
-app.state.policy_agent = policy_agent
-app.state.memory_service = memory_service
-
 app.include_router(api_router, prefix=settings.api_prefix)
 
 
@@ -60,4 +70,3 @@ def index() -> FileResponse:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
-
