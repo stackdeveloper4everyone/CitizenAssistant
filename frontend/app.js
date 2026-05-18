@@ -15,7 +15,15 @@ let recordedChunks = [];
 let isRecording = false;
 let activeLoader = null;
 let autoSpeakArmed = false;
-const RECENT_POLICIES_KEY = "recentPoliciesV1";
+const RECENT_POLICIES_KEY = "recentPoliciesV2";
+const GENERIC_POLICY_TITLES = new Set([
+  "",
+  "official source",
+  "untitled",
+  "untitled source",
+  "policy source",
+  "stored source",
+]);
 const recentPolicies = loadRecentPolicies();
 
 if (window.marked) {
@@ -153,7 +161,12 @@ function loadRecentPolicies() {
     if (!Array.isArray(parsed)) {
       return [];
     }
-    return parsed.filter((item) => item && typeof item.title === "string" && typeof item.url === "string");
+    return parsed
+      .filter((item) => item && typeof item.url === "string")
+      .map((item) => ({
+        title: resolvePolicyTitle(item),
+        url: item.url,
+      }));
   } catch {
     return [];
   }
@@ -197,6 +210,39 @@ function renderRecentPolicies() {
   });
 }
 
+function resolvePolicyTitle(source) {
+  const rawTitle = (source?.title || "").trim();
+  if (rawTitle && !GENERIC_POLICY_TITLES.has(rawTitle.toLowerCase())) {
+    return rawTitle;
+  }
+
+  const url = (source?.url || "").trim();
+  if (!url) {
+    return "Government scheme";
+  }
+
+  try {
+    const parsed = new URL(url);
+    const segments = parsed.pathname
+      .split("/")
+      .map((part) => decodeURIComponent(part))
+      .filter(Boolean)
+      .filter((part) => !["en", "hi", "schemes", "scheme", "pages", "page", "home", "index"].includes(part.toLowerCase()));
+
+    if (segments.length) {
+      const last = segments[segments.length - 1].replace(/\.[a-z0-9]{2,5}$/i, "");
+      const words = last.replace(/[-_]+/g, " ").trim();
+      if (words.length >= 3 && !/^\d+$/.test(words)) {
+        return words.replace(/\b\w/g, (char) => char.toUpperCase());
+      }
+    }
+
+    return parsed.hostname.replace(/^www\./i, "");
+  } catch {
+    return rawTitle || "Government scheme";
+  }
+}
+
 function updateRecentPoliciesFromSources(sources) {
   if (!Array.isArray(sources) || !sources.length) {
     return;
@@ -207,7 +253,7 @@ function updateRecentPoliciesFromSources(sources) {
       continue;
     }
     const normalizedUrl = source.url.trim();
-    const title = (source.title || "Policy Source").trim();
+    const title = resolvePolicyTitle(source);
 
     const existingIndex = recentPolicies.findIndex((item) => item.url === normalizedUrl);
     if (existingIndex >= 0) {

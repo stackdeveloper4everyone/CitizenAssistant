@@ -8,6 +8,7 @@ from backend.app.models.schemas import ChatResponse, ConversationAnalysis, Sourc
 from backend.app.prompts.templates import FINAL_RESPONSE_PROMPT
 from backend.app.services.sarvam_client import SarvamClient
 from backend.app.services.session_store import SessionState
+from backend.app.services.source_titles import resolve_source_title
 
 logger = logging.getLogger(__name__)
 
@@ -289,7 +290,7 @@ class PolicyAgent:
             if not url or url in source_map:
                 continue
             source_map[url] = SourceItem(
-                title=item.get("title", "Official source"),
+                title=resolve_source_title(item, session.collected_details),
                 url=url,
                 score=item.get("score"),
             )

@@ -9,6 +9,7 @@ from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 
 from backend.app.core.config import Settings
 from backend.app.services.guardrails import filter_search_results
+from backend.app.services.source_titles import resolve_source_title
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class SearchService:
                 if not url or url in seen_urls:
                     continue
                 seen_urls.add(url)
-                merged.append(item)
+                merged.append(self._enrich_result(item))
 
         # Fallback: if strict-domain search returns nothing, run a broader search
         # and apply trusted-source filtering afterward.
@@ -62,8 +63,13 @@ class SearchService:
                     if not url or url in seen_urls:
                         continue
                     seen_urls.add(url)
-                    merged.append(item)
+                    merged.append(self._enrich_result(item))
         return merged[:4]
+
+    def _enrich_result(self, item: dict[str, Any]) -> dict[str, Any]:
+        enriched = dict(item)
+        enriched["title"] = resolve_source_title(enriched)
+        return enriched
 
     def _normalize(self, raw_result: Any) -> list[dict[str, Any]]:
         if isinstance(raw_result, list):
