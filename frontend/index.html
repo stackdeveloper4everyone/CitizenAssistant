@@ -3,121 +3,185 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NagrikMitra</title>
+    <title>NagrikMitra — Citizen Policy Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <main class="app-shell">
-      <header class="site-header">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true">
-            <span></span>
-          </div>
-          <div class="brand-copy">
-            <h1>NagrikMitra</h1>
-          </div>
-        </div>
+    <div id="sceneLoader" class="scene-loader" aria-live="polite">
+      <div class="scene-loader__orb" aria-hidden="true"></div>
+      <p>Preparing immersive experience…</p>
+    </div>
+
+    <canvas id="webgl-canvas" class="webgl-canvas" aria-hidden="true"></canvas>
+
+    <div class="page-root">
+      <header class="site-header glass-panel">
+        <a class="brand" href="#aboutSection">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-copy">
+            <span class="brand-eyebrow">Government schemes</span>
+            <span class="brand-title">NagrikMitra</span>
+          </span>
+        </a>
         <nav class="top-nav" aria-label="Primary">
-          <a href="#assistantSection">Assistant</a>
-          <a href="#recentPoliciesSection">Recent Policies</a>
           <a href="#aboutSection">About</a>
+          <a href="#assistantSection">Assistant</a>
+          <a href="#recentPoliciesSection">Policies</a>
         </nav>
         <div class="header-ctas">
-          <a class="cta-btn ghost" href="#aboutSection">How It Works</a>
-          <a class="cta-btn solid" href="#assistantSection">Start Chat</a>
+          <a class="cta-btn ghost" href="#aboutSection">How it works</a>
+          <a class="cta-btn solid" href="#assistantSection">Start chat</a>
         </div>
       </header>
 
-      <section id="aboutSection" class="hero-panel">
-        <div class="hero-copy">
-          <p class="hero-kicker">Fast, Clear, and Reliable</p>
-          <h2>Discover policy support with a clean and guided experience</h2>
+      <section id="aboutSection" class="section hero-section">
+        <div class="hero-copy glass-panel">
+          <p class="hero-kicker">Trusted · Multilingual · Actionable</p>
+          <h2>Your citizen policy companion for schemes, eligibility, and grievance guidance</h2>
           <p>
-            Ask questions in your preferred language, view trusted references, and keep track of recently viewed
-            policies in one place.
+            Ask in your language, get grounded answers from official sources, and track policies you explore — all in
+            one immersive workspace.
           </p>
+          <div class="hero-actions">
+            <a class="cta-btn solid" href="#assistantSection">Open assistant</a>
+            <a class="cta-btn ghost" href="#recentPoliciesSection">Recent policies</a>
+          </div>
         </div>
         <div class="hero-highlights">
-          <article class="highlight-card">
-            <h3>Trusted Sources</h3>
-            <p>Responses are grounded in official policy references whenever available.</p>
+          <article class="highlight-card glass-panel">
+            <h3>Trusted sources</h3>
+            <p>Grounded retrieval from government and official portals.</p>
           </article>
-          <article class="highlight-card">
-            <h3>Language Aware</h3>
-            <p>Designed to support multilingual interaction for inclusive access.</p>
+          <article class="highlight-card glass-panel">
+            <h3>Language aware</h3>
+            <p>Supports major Indian languages with auto-detect.</p>
           </article>
-          <article class="highlight-card">
-            <h3>Practical Guidance</h3>
-            <p>Focused on actionable next steps, not just generic descriptions.</p>
+          <article class="highlight-card glass-panel">
+            <h3>Voice ready</h3>
+            <p>Speak your question and hear replies when you choose.</p>
           </article>
         </div>
       </section>
 
-      <div class="workspace-grid">
-        <section id="assistantSection" class="chat-card">
-          <header class="chat-header">
-            <h2>Assistant</h2>
-            <label class="language-picker">
-              <span>Language</span>
-              <select id="language">
-                <option value="auto">Auto detect</option>
-                <option value="en-IN">English</option>
-                <option value="hi-IN">Hindi</option>
-                <option value="ta-IN">Tamil</option>
-                <option value="te-IN">Telugu</option>
-                <option value="kn-IN">Kannada</option>
-                <option value="ml-IN">Malayalam</option>
-                <option value="mr-IN">Marathi</option>
-                <option value="gu-IN">Gujarati</option>
-                <option value="bn-IN">Bengali</option>
-                <option value="pa-IN">Punjabi</option>
-                <option value="od-IN">Odia</option>
-              </select>
-            </label>
-          </header>
-
-          <div id="chatLog" class="chat-log" aria-live="polite">
-            <article class="message assistant">
-              <div class="bubble">
-                <p>Tell me what you need help with.</p>
+      <section id="assistantSection" class="section workspace-section">
+        <div class="workspace-grid">
+          <article class="chat-card glass-panel">
+            <header class="chat-header">
+              <div>
+                <p class="section-eyebrow">Live assistant</p>
+                <h2>Policy chat</h2>
               </div>
-            </article>
-          </div>
+              <label class="language-picker">
+                <span>Language</span>
+                <select id="language">
+                  <option value="auto">Auto detect</option>
+                  <option value="en-IN">English</option>
+                  <option value="hi-IN">Hindi</option>
+                  <option value="ta-IN">Tamil</option>
+                  <option value="te-IN">Telugu</option>
+                  <option value="kn-IN">Kannada</option>
+                  <option value="ml-IN">Malayalam</option>
+                  <option value="mr-IN">Marathi</option>
+                  <option value="gu-IN">Gujarati</option>
+                  <option value="bn-IN">Bengali</option>
+                  <option value="pa-IN">Punjabi</option>
+                  <option value="od-IN">Odia</option>
+                </select>
+              </label>
+            </header>
 
-          <form id="chatForm" class="composer">
-            <textarea
-              id="messageInput"
-              rows="2"
-              maxlength="2000"
-              placeholder="Type your question..."
-              required
-            ></textarea>
-            <div class="composer-actions">
-              <div class="voice-controls">
-                <button type="button" id="recordButton" class="voice-btn">Voice Input</button>
-                <label class="autoplay-toggle">
-                  <input type="checkbox" id="autoSpeakToggle" />
-                  <span>Auto speak</span>
-                </label>
-              </div>
-              <button type="submit" id="sendButton">Send</button>
+            <div class="quick-prompts" aria-label="Quick prompts">
+              <button type="button" class="quick-chip" data-fill="Madhya Pradesh government schemes for students">
+                MP student schemes
+              </button>
+              <button type="button" class="quick-chip" data-fill="Check eligibility for PM-KISAN">
+                PM-KISAN eligibility
+              </button>
+              <button type="button" class="quick-chip" data-fill="Scholarship schemes for college students">
+                Scholarships
+              </button>
+              <button type="button" class="quick-chip" data-fill="How do I file a grievance for delayed benefits?">
+                File grievance
+              </button>
             </div>
-          </form>
-        </section>
 
-        <aside id="recentPoliciesSection" class="sidebar-card" aria-label="Recently viewed policies">
-          <div class="sidebar-head">
-            <h2>Recently Viewed Policies</h2>
-            <button type="button" id="clearRecentPoliciesBtn" class="clear-recent-btn">Clear</button>
-          </div>
-          <ul id="recentPoliciesList" class="recent-policy-list">
-            <li class="empty-policy-item">No policies viewed yet.</li>
-          </ul>
-        </aside>
-      </div>
-    </main>
+            <div id="chatLog" class="chat-log" aria-live="polite">
+              <article class="message assistant">
+                <div class="bubble">
+                  <div class="message-content">
+                    <p>Tell me what you need help with — schemes, eligibility, documents, or grievance support.</p>
+                  </div>
+                </div>
+              </article>
+            </div>
 
+            <form id="chatForm" class="composer">
+              <textarea
+                id="messageInput"
+                rows="2"
+                maxlength="2000"
+                placeholder="Type your question… (Enter to send, Shift+Enter for new line)"
+                required
+              ></textarea>
+              <div class="composer-actions">
+                <div class="voice-controls">
+                  <button type="button" id="recordButton" class="voice-btn">Start voice input</button>
+                  <label class="autoplay-toggle">
+                    <input type="checkbox" id="autoSpeakToggle" />
+                    <span>Auto speak replies</span>
+                  </label>
+                </div>
+                <button type="submit" id="sendButton" class="send-btn">
+                  <span>Send</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M4 12h14M14 6l6 6-6 6"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </article>
+
+          <aside id="recentPoliciesSection" class="sidebar-card glass-panel" aria-label="Recently viewed policies">
+            <div class="sidebar-head">
+              <div>
+                <p class="section-eyebrow">Your trail</p>
+                <h2>Recent policies</h2>
+              </div>
+              <button type="button" id="clearRecentPoliciesBtn" class="clear-recent-btn">Clear</button>
+            </div>
+            <ul id="recentPoliciesList" class="recent-policy-list">
+              <li class="empty-policy-item">No policies viewed yet.</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <footer class="site-footer glass-panel">
+        <p>NagrikMitra · Citizen Service Assistant · Answers grounded in official sources when available.</p>
+      </footer>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+        }
+      }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/static/app.js?v=20260415-4"></script>
+    <script type="module" src="/static/scene3d.js"></script>
+    <script src="/static/app.js?v=20260415-5"></script>
   </body>
-  </html>
+</html>
