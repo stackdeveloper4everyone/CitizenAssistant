@@ -401,6 +401,14 @@ chatForm.addEventListener("submit", async (event) => {
   await sendChatMessage(message);
 });
 
+messageInput.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" || event.shiftKey || event.isComposing) {
+    return;
+  }
+  event.preventDefault();
+  chatForm.requestSubmit();
+});
+
 quickChips.forEach((chip) => {
   chip.addEventListener("click", () => {
     const text = chip.getAttribute("data-fill");

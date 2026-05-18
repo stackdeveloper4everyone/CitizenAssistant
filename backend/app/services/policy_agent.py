@@ -901,6 +901,33 @@ class PolicyAgent:
         lowered = message.lower()
         details: dict[str, str] = {}
 
+        if "," in message or ";" in message or "|" in message:
+            for part in re.split(r"[,;|]+", message):
+                chunk = part.strip()
+                if not chunk:
+                    continue
+                for key, value in self._extract_single_detail_chunk(chunk).items():
+                    if value and not details.get(key):
+                        details[key] = value
+            if details:
+                return details
+
+        details.update(self._extract_single_detail_chunk(message))
+        return details
+
+    def _extract_single_detail_chunk(self, message: str) -> dict[str, str]:
+        message = self._normalize_numerals(message)
+        lowered = message.lower()
+        details: dict[str, str] = {}
+
+        combined = re.match(r"^\s*(\d{1,3})\s+(.+?)\s*$", lowered)
+        if combined:
+            numeric_age = int(combined.group(1))
+            if 0 < numeric_age <= 120:
+                details["age"] = str(numeric_age)
+            remainder = combined.group(2).strip()
+            self._apply_profile_from_text(remainder, details, allow_free_text=True)
+
         age_patterns = [
             r"\b(\d{1,3})\s*[- ]?years?[- ]?old\b",
             r"\baged?\s*(?:is\s*)?(\d{1,3})\b",
@@ -930,23 +957,18 @@ class PolicyAgent:
                 if 0 < numeric_age <= 120:
                     details["age"] = str(numeric_age)
 
+        compact = re.sub(r"[^a-z\s]", " ", lowered)
+        compact = re.sub(r"\s+", " ", compact).strip()
         for state_key, state_value in sorted(self.STATE_ALIASES.items(), key=lambda item: len(item[0]), reverse=True):
-            if re.search(rf"\bfrom\s+{re.escape(state_key)}\b", lowered) or re.search(
-                rf"\bin\s+{re.escape(state_key)}\b", lowered
-            ) or re.search(
-                rf"\bstate\s*(?:is|=)?\s*{re.escape(state_key)}\b", lowered
+            if (
+                re.search(rf"\bfrom\s+{re.escape(state_key)}\b", compact)
+                or re.search(rf"\bin\s+{re.escape(state_key)}\b", compact)
+                or re.search(rf"\bstate\s*(?:is|=)?\s*{re.escape(state_key)}\b", compact)
+                or re.fullmatch(rf"{re.escape(state_key)}", compact)
+                or re.search(rf"\b{re.escape(state_key)}\b", compact)
             ):
                 details["state"] = state_value
                 break
-
-        # Accept concise follow-ups like "Karnataka" when user is filling missing fields.
-        if not details.get("state"):
-            compact = re.sub(r"[^a-z\s]", " ", lowered)
-            compact = re.sub(r"\s+", " ", compact).strip()
-            for state_key, state_value in sorted(self.STATE_ALIASES.items(), key=lambda item: len(item[0]), reverse=True):
-                if re.fullmatch(rf"{re.escape(state_key)}", compact) or re.search(rf"\b{re.escape(state_key)}\b", compact):
-                    details["state"] = state_value
-                    break
 
         if not details.get("state"):
             for state_key, state_value in sorted(self.STATE_ALIASES_HI.items(), key=lambda item: len(item[0]), reverse=True):
@@ -958,10 +980,7 @@ class PolicyAgent:
                     details["state"] = state_value
                     break
 
-        for profile_key, profile_value in sorted(self.PROFILE_KEYWORDS.items(), key=lambda item: len(item[0]), reverse=True):
-            if re.search(rf"\b{re.escape(profile_key)}\b", lowered):
-                details["profile"] = profile_value
-                break
+        self._apply_profile_from_text(lowered, details, allow_free_text=False)
 
         # Fallback: capture common occupation phrases even if exact keyword is missing.
         if not details.get("profile"):
@@ -1011,6 +1030,25 @@ class PolicyAgent:
                 details["scheme_name_or_service"] = service_match.group(1).strip(" .")
 
         return details
+
+    def _apply_profile_from_text(self, text: str, details: dict[str, str], *, allow_free_text: bool = False) -> None:
+        if details.get("profile"):
+            return
+        lowered = text.lower()
+        for profile_key, profile_value in sorted(self.PROFILE_KEYWORDS.items(), key=lambda item: len(item[0]), reverse=True):
+            if re.search(rf"\b{re.escape(profile_key)}\b", lowered):
+                details["profile"] = profile_value
+                return
+        if not allow_free_text:
+            return
+        cleaned = re.sub(r"[^a-z\s]", " ", lowered)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        if not cleaned or re.fullmatch(r"\d{1,3}", cleaned) or len(cleaned.split()) > 4:
+            return
+        for state_key in self.STATE_ALIASES:
+            if state_key in cleaned:
+                return
+        details["profile"] = cleaned
 
     def _normalize_numerals(self, message: str) -> str:
         devanagari_digits = str.maketrans("०१२३४५६७८९", "0123456789")
@@ -1084,7 +1122,20 @@ class PolicyAgent:
         return [field for field in required_fields if not details.get(field)]
 
     def _build_clarifying_question(self, missing_fields: list[str]) -> str:
-        readable = ", ".join(field.replace("_", " ") for field in missing_fields)
+        labels = {
+            "state": "state (for example, Madhya Pradesh)",
+            "age": "age",
+            "profile": "profile (for example, student, farmer, or widow)",
+            "scheme_name": "scheme name",
+            "scheme_name_or_service": "scheme or service name",
+            "grievance_summary": "grievance details",
+        }
+        readable = ", ".join(labels.get(field, field.replace("_", " ")) for field in missing_fields)
+        if len(missing_fields) > 1:
+            return (
+                f"To help accurately, please share your {readable}. "
+                "You can send them together in one line, for example: `19, student, Madhya Pradesh`."
+            )
         return f"To help accurately, please share your {readable}."
 
     def _default_search_queries(self, intent: str, details: dict[str, str], normalized_message: str) -> list[str]:
